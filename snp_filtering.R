@@ -116,9 +116,12 @@ data.gl@other$history
 save(data.gl, file = "pristis_geno_cleaned.Rdata")
 
 
+gl <- get(load("C:/Users/samue/Desktop/Honours/Chapter_2_Relatedness_paper/analysis/daly_geno_clean.Rdata")); gl
 
 
 
+
+?gl2vcf()
 
 
 
