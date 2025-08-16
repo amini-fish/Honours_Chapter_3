@@ -58,9 +58,10 @@ gl <- get(load("C:/Users/samue/Desktop/Honours_Sawfish/analysis/daly_geno_clean.
 
 ## make the gnelight object a vcf so it is compatible with gbasics 
 
-gl2vcf(gl, plink.bin.path = "C:/Users/samue/Desktop/Honours_Sawfish/analysis/plink", outfile = "clean_daly_pristis", outpath = "C:/Users/samue/Desktop/Honours_Sawfish/analysis")
+gl2vcf(gl, plink.bin.path = "C:/Users/samue/Desktop/Honours/analysis/plink", outfile = "clean_daly_pristis", outpath = "C:/Users/samue/Desktop/Honours_Sawfish/analysis")
 
 ## Now we use gbasics function to make a snpg file 
+
 dalysnp <- read_vcf2snpgeno(vfilename = "clean_daly_pristis.vcf")
 
 daly.snp <- snpgeno("C:/Users/samue/Desktop/Honours_Sawfish/analysis/clean_daly_pristis.vcf")

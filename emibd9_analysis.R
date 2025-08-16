@@ -95,7 +95,7 @@ med #0.0052
 #### Visualise the distribition of results as a histogram ####
 
 rel.hist <- ggplot(data = emibd.rel, aes(x = as.numeric(value))) +
-  geom_histogram(bins = 80, col = I("black")) +
+  geom_histogram(bins = 70, col = I("black")) +
   xlab("Relatedness") +
   ylab("Count") +
   theme_bw()
@@ -111,12 +111,12 @@ rel.hist <- rel.hist +
   geom_vline(xintercept = 0.158, col = "black", linewidth = 1,  linetype="dotted") +
   geom_vline(xintercept = 0.204, col = "black", linewidth = 1, linetype="dotted") +
   geom_vline(xintercept = 0.296, col = "black", linewidth = 1,  linetype="dotted") +
-  scale_x_continuous(n.breaks = 12) +
+  scale_x_continuous(n.breaks = 8) +
   scale_y_continuous(n.breaks = 10) 
   
 print(rel.hist)
 
-emf("C:/Users/samue/Desktop/Honours/EMIBD9_Histogram.emf", width = 10, height = 8)
+emf("C:/Users/samue/Desktop/EMIBD9_Histogram.emf", width = 10, height = 8)
 print(rel.hist)
 dev.off()
 
