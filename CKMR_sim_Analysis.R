@@ -189,6 +189,7 @@ kappas[c("PO","FS", "HS", "HAN", "HFC", "U"), ]
 #### Simulate dyads for each to approximate the LLRs and therefore the fpos/fneg ####
 
 ##  Gives us our true relatedness log likelihoods based on the assumption of no linkage 
+
 ##  Good filtering should minimise the effect - can't fully escape it with SNPs
 
 ### Desired fpos rate is 0.00002849002 i.e. 2.849 x 10-5
@@ -327,7 +328,6 @@ PO_U_logls <- extract_logls(
   denom = c(U = 1)
 )
 
-PO_U_logls
 
 set.seed(42) # for the jittering
 

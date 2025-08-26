@@ -32,7 +32,7 @@ data.gl <- dartR.base::gl.read.dart(filename = data,
 save(data.gl, file = "C:/Users/samue/Desktop/daly_geno_raw.Rdata")
 
 
-  gl.smearplot(data.gl) 
+gl.smearplot(data.gl) 
 
 data.gl <- gl.keep.pop(data.gl, pop.list = "Daly")
 
@@ -56,7 +56,7 @@ data.gl <- dartR.base::gl.filter.reproducibility(data.gl, threshold = 0.98)
 
 dartR.base::gl.report.callrate(data.gl)
 
-data.gl <- dartR.base::gl.filter.callrate(data.gl, method = "loc", threshold = 0.9)
+data.gl <- dartR.base::gl.filter.callrate(data.gl, method = "loc", threshold = 0.85)
 
 data.gl
 
@@ -71,9 +71,9 @@ data.gl
 ## Remove secondary loci - important to keep unlinked loci
 
 data.gl <- dartR.base::gl.filter.secondaries(data.gl, method = "best") 
- 
 
 data.gl@other$loc.metrics
+
 #Very low filter – this is only to get rid of your really bad individuals
 
 dartR.base::gl.report.callrate(data.gl, method = "ind")
@@ -92,8 +92,8 @@ data.gl <- gl.filter.maf(data.gl, t = 0.025, v = 5)
 
 data.gl <- dartR.base::gl.filter.monomorphs(data.gl)
 
-
 data.gl 
+
 
 ## remove evidence of DNA contamination ## Important for kin finding 
 

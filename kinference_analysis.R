@@ -53,21 +53,22 @@ library(vecless)
 
 ##################################################################################
 
-## Now, test the installs on this example analysis:
-gl <- get(load("C:/Users/samue/Desktop/Honours_Sawfish/analysis/daly_geno_clean.Rdata")) ## you'll need to input the correct filepath for your OS
+gl <- get(load("C:/Users/samue/Desktop/daly_geno_raw.Rdata")); gl
 
 ## make the gnelight object a vcf so it is compatible with gbasics 
 
-gl2vcf(gl, plink.bin.path = "C:/Users/samue/Desktop/Honours/analysis/plink", outfile = "clean_daly_pristis", outpath = "C:/Users/samue/Desktop/Honours_Sawfish/analysis")
+gl2vcf(gl, plink.bin.path = "C:/Users/samue/Desktop/Other_Research/Adspersa_writeup/plink",
+       outfile = "clean_daly_pristis", outpath = "C:/Users/samue/Desktop")
 
 ## Now we use gbasics function to make a snpg file 
 
-dalysnp <- read_vcf2snpgeno(vfilename = "clean_daly_pristis.vcf")
+dalysnp <- read_vcf2snpgeno(vfilename = "C:/Users/samue/Desktop/clean_daly_pristis.vcf")
 
-daly.snp <- snpgeno("C:/Users/samue/Desktop/Honours_Sawfish/analysis/clean_daly_pristis.vcf")
+?snpgeno
+daly.snp <- snpgeno("C:/Users/samue/Desktop/clean_daly_pristis.vcf")
 
 ## Use kin_power to estimate how good our loci are for HSP estimation 
-??hsp_power
+
 
 dups <- find_duplicates(gl, max_diff_loci = 200, showPlot = TRUE)
 SHS_b <- SHS[ -c( drop_dups_pairwise_equiv( dups[,2:3])),]

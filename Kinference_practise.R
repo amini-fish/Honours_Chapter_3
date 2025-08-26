@@ -8,19 +8,20 @@
 install.packages("Rcpp")
 install.packages("remotes")
 install.packages("tensorA")
-
-## support packages from Mark Bravington's repo:
-
 install.packages(pkgs = c("atease", "mvbutils", "vecless"), repos = "https://markbravington.github.io/Rmvb-repo")
-
 install.packages(pkgs = c("gbasics"), repos = "https://markbravington.github.io/Rmvb-repo")
-
-## kinference and gbasics: note that you'll need to specify your own filepaths here. The files are attached.
-
-remotes::install_local("C:/Users/samue/Desktop/Honours/Chapter_2_Relatedness_paper/Kinference/kinference-master/kinference")
-remotes::install_local("C:/Users/samue/Desktop/Honours/Chapter_2_Relatedness_paper/Kinference/gbasics-master/gbasics")
-remotes::install_github("thierrygosselin/radiator")
+remotes::install_local("C:/Users/samue/Desktop/Honours/Chapter_2_Relatedness_paper/Kinference/kinference-master/kinference", force = T)
+remotes::install_local("C:/Users/samue/Desktop/Honours/Chapter_2_Relatedness_paper/Kinference/gbasics-master/gbasics", force = T)
+remotes::install_github("thierrygosselin/radiator", force = T)
 install.packages("radiator")
+
+## OR 
+
+options(repos = unique( c(
+  mvb = 'https://markbravington.r-universe.dev',
+  getOption( 'repos')[ 'CRAN']
+)))
+install.packages( "gbasics")
 
 ## Okay, I think we're good to go...
 
@@ -38,13 +39,7 @@ library(dartRverse)
 library(radiator)
 library(SNPRelate)
 library(mvbutils)
-library(gbasics) ## object specification for `snpgeno` objects - shouldn't need to explicitly call it
-options(repos = unique( c(
-  mvb = 'https://markbravington.r-universe.dev',
-  getOption( 'repos')[ 'CRAN']
-)))
-install.packages( "gbasics")
-library(gbasics)
+library(gbasics) 
 
 # the general workflow: gl -> snpgds -> snpgeno
 
@@ -67,9 +62,7 @@ dartR.base::gl2vcf(gl,
 pristis <- radiator::genomic_converter(data = "C:/Users/samue/Desktop/Honours/Pristis_test.vcf", 
                                        output = "gds", 
                                        parallel.core = 1,
-                                       filename = "pristis_test")
-
-
+                                       filename = "pristis_test") 
 
 SNPRelate::snpgdsVCF2GDS(vcf.fn = "C:/Users/samue/Desktop/Honours/Pristis_test.vcf", 
                          out.fn = "C:/Users/samue/Desktop/Honours/pristis_test.gds", 
@@ -80,22 +73,44 @@ SNPRelate::snpgdsVCF2GDS(vcf.fn = "C:/Users/samue/Desktop/Honours/Pristis_test.v
 
 snpgdsOpen(filename = "C:/Users/samue/Desktop/Honours/pristis_test.gds", allow.duplicate = TRUE)
 
-if( require(SNPRelate)){
-  df <- gbasics::read_snpgds2snpgeno(filename = "C:/Users/samue/Desktop/Honours/pristis_test.gds", 
-                                       locusID = "snp.id", 
-                                       sampleID = "sample.id", 
-                                       locinfoFields = c("snp.rs.id", "snp.position", "snp.chromosome", "snp.allele"))
+if(require(SNPRelate)){
+  df <- read_snpgds2snpgeno(
+    filename = "C:/Users/samue/Desktop/Honours/pristis_test.gds", 
+    locusID = "snp.id",
+    sampleID = "sample.id",
+    locinfoFields = c("snp.rs.id", "snp.position", "snp.chromosome", "snp.allele"))
 }
+
+try({ g <- SNPRelate::snpgdsOpen("C:/Users/samue/Desktop/Honours/pristis_test.gds", allow.duplicate = TRUE); SNPRelate::snpgdsClose(g) }, silent = TRUE)
+
+
+gds <- "C:/Users/samue/Desktop/Honours/pristis_test.gds"
+
+g <- SNPRelate::snpgdsOpen(gds, allow.duplicate = TRUE)
+on.exit(SNPRelate::snpgdsClose(g), add = TRUE)
+
+df <- gbasics::read_snpgds2snpgeno(
+  filename      = gds,
+  sampleID      = "sample.id",
+  locusID       = "snp.id", 
+  locinfoFields = c(                       # 1 -> Locus  (MUST be first)
+    "snp.chromosome",                        # 2 -> Chromosome
+    "snp.position",                          # 3 -> Position
+    "snp.allele"                             # 4 -> Alleles
+  )
+)
 
 #### It finally worked hooray ####
 
-str(df)
-
 ## Estimate the Allele Frequencies 
+
+df <- readRDS("pristis_snpgeno.rds")
 
 head(df$locinfo)
 
 df$locinfo$pbonzer <- re_est_ALF(df)$locinfo$pambig
+
+# Now we're good to go
 
 ##------------------------------------
 ## Data cleaning + QAQC
@@ -103,11 +118,13 @@ df$locinfo$pbonzer <- re_est_ALF(df)$locinfo$pambig
 
 ## 1. Check 4 and 6 (i.e., hwe check for the 4 allele model and the 6 allele model)
 
-pvals <- check6and4(df, thresh_pchisq_6and4 = c(1e-4, 1e-6), show6 = FALSE)
+pvals <- kinference::check6and4(df, thresh_pchisq_6and4 = c(1e-4, 1e-6), show6 = FALSE)
 
 ## Remove the worst loci p < 1x10^-10
 
-df_1 <- df[, pvals$pval4 > 1e-6]
+df_1 <- df[, pvals$pval4 > 1e-8]
+
+str(df_1) ## 3336 loci retained from ~5000
 
 pvals_1 <- check6and4(df_1, thresh_pchisq_6and4 = c(1e-4, 1e-6), show6 = FALSE)
 
@@ -117,22 +134,29 @@ dups <- find_duplicates(df_1, max_diff_loci = 50) # none that are alarming yay!
 
 ## Check for fish from different pops/species
 
-ilglk <- ilglk_geno(df_1, list(nclass = 1000, xlim = c(-2, 2)))
-
-abline(v = -2, col = "red") ## do I even need a cutoff?!
+ilglk <- ilglk_geno(df_1, list(nclass = 100, xlim = c(-2, 2))) ## do I even need a cutoff?!
 
 ## Estimate power to find kin i.e., how well will this set of markers work 
 
-df_2 <- kinference::kin_power(df_1, k = 0.5)
+df_2 <- kinference::kin_power(df_1, k = 0.5) 
 
+str(df_2)
 head(df_2$locinfo) ## Check that the info we want is there...looks good. 
 
 ## Examine the heterozygosities of our inds: 
 ## Importnant for nulls + contamination (low + high)
 
-hetz_rich <- hetzminoo_fancy(df_2, "rich", list(xlim = c(-1,0.4)))
+# Contam 
 
-hetz_poor <- hetzminoo_fancy(df_2, "poor")
+hetzminoo_fancy(df_2, "rich")
+
+str(hetz_rich)
+
+write.csv(hetz_rich)
+
+# Degrdaded samples 
+
+hetz_poor <- kinference::hetzminoo_fancy(df_2, "poor")
 
 ## Quick clean up 
 
@@ -271,35 +295,3 @@ kin_pairs <- tibble(kinf_kin2)
 print(kin_pairs)
 
 ## Miscelaneous shit
-
-
-PLINK_BIN_PATH <- "C:/Users/samue/Desktop/Other_Research/Adspersa_writeup/plink" # <<<EDIT ME>>>
-# <<<EDIT ME>>>
-GENLIGHT_RDATA <- "C:/Users/samue/Desktop/daly_geno_raw.Rdata"                    # <<<EDIT ME>>>
-VCF_FILE       <- file.path(WORK_DIR, "Pristis_test.vcf")
-
-
-if (!dir.exists(WORK_DIR)) dir.create(WORK_DIR, recursive = TRUE)
-
-# Expecting an object named `gl` inside the .Rdata
-gl <- get(load(GENLIGHT_RDATA))
-gl
-
-dartR.base::gl2vcf(
-  gl,
-  plink.bin.path = PLINK_BIN_PATH,
-  outpath        = WORK_DIR,
-  outfile        = tools::file_path_sans_ext(basename(VCF_FILE)),
-  v              = 5
-)
-
-SNPRelate::snpgdsVCF2GDS(
-  vcf.fn = VCF_FILE,
-  out.fn = GDS_FILE,
-  method = "biallelic.only",
-  verbose = TRUE
-)
-
-snpg <- SNPRelate::snpgdsOpen(filename = GDS_FILE, allow.duplicate = TRUE)
-SNPRelate::snpgdsClose(snpg)
-
